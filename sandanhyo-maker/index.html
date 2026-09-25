@@ -1,0 +1,788 @@
+﻿<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>三段表メーカー</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=BIZ+UDPMincho:wght@400;700&display=swap">
+<style>
+:root{
+  --bg:#F3F5F4; --panel:#FFFFFF; --ink:#1B2226; --muted:#5A666D; --line:#C9D1D0; --line-strong:#8A9796;
+  --accent:#1E5A56; --accent-ink:#FFFFFF; --accent-soft:#DCEAE8;
+  --c1:#E9EEF6; --c2:#EAF3EE; --c3:#F5EFE6;
+  --mark:#F6E6A2; --mark-ink:#3A2F00; --ref:#1E5A56; --warn:#8A3B12; --warn-bg:#FBEDE4; --ok:#1F6B3A;
+  --chap:#E4E9E8;
+  --gothic:"BIZ UDPGothic","Hiragino Sans","Yu Gothic","Meiryo",sans-serif;
+  --mincho:"BIZ UDPMincho","Hiragino Mincho ProN","Yu Mincho","MS PMincho",serif;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    color-scheme:dark;
+    --bg:#141A1C; --panel:#1C2427; --ink:#E4EAEA; --muted:#9AA7AB; --line:#34413F; --line-strong:#56676A;
+    --accent:#6FB7AF; --accent-ink:#0E1A19; --accent-soft:#223A38;
+    --c1:#1F2733; --c2:#1E2B25; --c3:#2B2620;
+    --mark:#5B4E14; --mark-ink:#FFF3C4; --ref:#8FD0C8; --warn:#F2A57E; --warn-bg:#3A2418; --ok:#7FD39B;
+    --chap:#243033;
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --bg:#141A1C; --panel:#1C2427; --ink:#E4EAEA; --muted:#9AA7AB; --line:#34413F; --line-strong:#56676A;
+  --accent:#6FB7AF; --accent-ink:#0E1A19; --accent-soft:#223A38;
+  --c1:#1F2733; --c2:#1E2B25; --c3:#2B2620;
+  --mark:#5B4E14; --mark-ink:#FFF3C4; --ref:#8FD0C8; --warn:#F2A57E; --warn-bg:#3A2418; --ok:#7FD39B;
+  --chap:#243033;
+}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--gothic);font-size:14px;line-height:1.6}
+.wrap{max-width:1400px;margin:0 auto;padding-block:20px 48px;padding-inline:16px;display:flex;flex-direction:column;gap:18px}
+header.top{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 16px}
+header.top h1{font-family:var(--mincho);font-size:26px;margin:0;letter-spacing:.06em;text-wrap:balance}
+header.top p{margin:0;color:var(--muted);font-size:13px}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:16px;display:flex;flex-direction:column;gap:14px}
+.tabs{display:flex;gap:4px;border-bottom:1px solid var(--line)}
+.tab{appearance:none;border:1px solid transparent;border-bottom:none;background:none;color:var(--muted);font:inherit;font-weight:700;padding:8px 14px;border-radius:5px 5px 0 0;cursor:pointer;margin-bottom:-1px}
+.tab[aria-selected="true"]{background:var(--panel);color:var(--ink);border-color:var(--line)}
+.tab:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.row{display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end}
+label.f{display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--muted);font-weight:700;letter-spacing:.04em}
+input[type=text],select,textarea{font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line-strong);border-radius:4px;padding:7px 9px}
+input[type=text]{min-width:0}
+textarea{width:100%;min-height:180px;font-family:var(--mincho);font-size:13px;line-height:1.7;resize:vertical}
+button.b{appearance:none;font:inherit;font-weight:700;border-radius:4px;padding:8px 14px;cursor:pointer;border:1px solid var(--line-strong);background:var(--panel);color:var(--ink)}
+button.b.pri{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+button.b:disabled{opacity:.5;cursor:default}
+button.b.sm{padding:5px 10px;font-size:12px}
+.tiers{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.tier{border:1px solid var(--line);border-radius:5px;padding:10px;display:flex;flex-direction:column;gap:8px}
+.tier h3{margin:0;font-size:12px;letter-spacing:.08em;color:var(--muted)}
+.tier select{width:100%}
+.tier .row input{flex:1 1 120px}
+.tier.t1{background:var(--c1)} .tier.t2{background:var(--c2)} .tier.t3{background:var(--c3)}
+.opts{display:flex;flex-wrap:wrap;gap:8px 20px;align-items:center;font-size:13px}
+.opts label{display:flex;gap:6px;align-items:center;cursor:pointer}
+.opts input[type=text]{width:240px}
+.msg{font-size:13px;padding:8px 12px;border-radius:4px;border:1px solid var(--line)}
+.msg.err{background:var(--warn-bg);color:var(--warn);border-color:transparent}
+.msg.ok{color:var(--ok)}
+.hint{font-size:12px;color:var(--muted);margin:0}
+.hint a{color:var(--ref)}
+.tool{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between}
+.tool .stats{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+.tool .acts{display:flex;flex-wrap:wrap;gap:8px}
+.sample{display:inline-block;font-size:11px;font-weight:700;letter-spacing:.06em;background:var(--warn-bg);color:var(--warn);padding:2px 8px;border-radius:3px}
+.scroll{overflow-x:auto;border:1px solid var(--line-strong);border-radius:4px;background:var(--panel)}
+table.sdh{border-collapse:collapse;width:100%;min-width:960px;table-layout:fixed;font-family:var(--mincho);font-size:13.5px;line-height:1.75}
+table.sdh th{position:sticky;top:0;text-align:left;font-family:var(--gothic);font-size:12.5px;padding:8px 10px;border:1px solid var(--line-strong);vertical-align:top}
+table.sdh th .nm{display:block;font-size:14px;color:var(--ink)}
+table.sdh th .no{display:block;font-weight:400;color:var(--muted);font-size:11.5px}
+table.sdh th.h1{background:var(--c1)} table.sdh th.h2{background:var(--c2)} table.sdh th.h3{background:var(--c3)}
+table.sdh td{border:1px solid var(--line);padding:8px 10px;vertical-align:top;word-break:break-word}
+table.sdh tr.chap td{background:var(--chap);font-family:var(--gothic);font-weight:700;font-size:12.5px;letter-spacing:.04em;padding:5px 10px}
+table.sdh tr.sep td{background:var(--chap);font-family:var(--gothic);font-size:12px;color:var(--muted);padding:5px 10px}
+.art+.art{margin-top:12px;padding-top:10px;border-top:1px dashed var(--line)}
+.cap{margin:0 0 0 1em}
+.ln{margin:0;padding-left:1em;text-indent:-1em}
+.ln.i1{padding-left:2em} .ln.i2{padding-left:3em} .ln.i3{padding-left:4em}
+.ln b{font-weight:700}
+.hl{background:var(--mark);color:var(--mark-ink);padding:0 1px}
+.ref{color:var(--ref);text-decoration:underline;text-underline-offset:3px}
+.tag{font-family:var(--gothic);font-size:10.5px;color:var(--muted);border:1px solid var(--line-strong);border-radius:3px;padding:0 4px;margin-left:6px;white-space:nowrap}
+.empty{color:var(--muted);font-family:var(--gothic);font-size:12px}
+[contenteditable="true"]{outline:2px dashed var(--accent-soft);outline-offset:-2px}
+details.help{font-size:13px}
+details.help summary{cursor:pointer;font-weight:700;color:var(--muted)}
+details.help ol{margin:8px 0 0;padding-left:1.4em;display:flex;flex-direction:column;gap:4px}
+.legend{display:flex;flex-wrap:wrap;gap:14px;font-size:12px;color:var(--muted)}
+@media (max-width:760px){.tiers{grid-template-columns:1fr}}
+@media print{
+  @page{size:A4 landscape;margin:12mm}
+  body{background:#fff;color:#000}
+  .wrap{padding:0;max-width:none}
+  .noprint{display:none!important}
+  .scroll{border:none;overflow:visible}
+  table.sdh{min-width:0;font-size:9.5pt;color:#000}
+  table.sdh th{position:static;background:#eee!important;color:#000}
+  table.sdh td,table.sdh th{border:1px solid #000}
+  .hl{background:#fff2a8!important;color:#000}
+  .ref{color:#000}
+  [contenteditable="true"]{outline:none}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header class="top">
+    <h1>三段表メーカー</h1>
+    <p>法律・政令・省令（規則）の対応条項を横並びにします。委任（「政令で定める」等）と引用（「法第〇条」「令第〇条」）を手がかりに自動で並べます。</p>
+  </header>
+
+  <section class="panel noprint" aria-label="入力">
+    <div class="tabs" role="tablist">
+      <button class="tab" role="tab" id="tab-api" aria-selected="false" aria-controls="pane-api">e-Govから取得</button>
+      <button class="tab" role="tab" id="tab-paste" aria-selected="true" aria-controls="pane-paste">条文を貼り付け</button>
+    </div>
+
+    <div id="pane-api" role="tabpanel" aria-labelledby="tab-api" hidden>
+      <div style="display:flex;flex-direction:column;gap:12px">
+        <div class="row">
+          <label class="f" style="flex:1 1 280px">法律名（一部でも可）
+            <input type="text" id="baseName" placeholder="例：公益社団法人及び公益財団法人の認定等に関する法律" value="行政書士法">
+          </label>
+          <button class="b pri" id="btnSearch">探して三段表をつくる</button>
+        </div>
+        <div class="tiers">
+          <div class="tier t1"><h3>上段　法律</h3>
+            <select id="sel1" aria-label="法律"><option value="">（未選択）</option></select>
+            <div class="row"><input type="text" id="alt1" aria-label="法律を別名で探す" placeholder="別の名前で探す"><button class="b sm" data-alt="1">探す</button></div>
+          </div>
+          <div class="tier t2"><h3>中段　政令（施行令）</h3>
+            <select id="sel2" aria-label="政令"><option value="">（使わない）</option></select>
+            <div class="row"><input type="text" id="alt2" aria-label="政令を別名で探す" placeholder="別の名前で探す"><button class="b sm" data-alt="2">探す</button></div>
+          </div>
+          <div class="tier t3"><h3>下段　省令・規則（施行規則）</h3>
+            <select id="sel3" aria-label="省令・規則"><option value="">（使わない）</option></select>
+            <div class="row"><input type="text" id="alt3" aria-label="省令を別名で探す" placeholder="別の名前で探す"><button class="b sm" data-alt="3">探す</button></div>
+          </div>
+        </div>
+        <div class="row"><button class="b" id="btnBuildApi" disabled>選び直した内容でつくり直す</button></div>
+        <p class="hint">e-Gov法令API（v2）から現行の本文を取得します。Claudeの画面上では外部への通信が制限されているため、この機能は使えません。共有されたHTMLファイルを手元に保存し、ブラウザ（Chrome・Edge等）で開くと使えます。うまく取得できないときは「条文を貼り付け」を使ってください。</p>
+      </div>
+    </div>
+
+    <div id="pane-paste" role="tabpanel" aria-labelledby="tab-paste">
+      <div style="display:flex;flex-direction:column;gap:12px">
+        <p class="hint"><a href="https://laws.e-gov.go.jp/" target="_blank" rel="noopener">e-Gov法令検索</a>で本則をコピーし、そのまま貼り付けてください。見出し「（目的）」、条「第一条　…」、項「２　…」、号「一　…」、章「第一章　総則」を読み取ります。「附則」以降は無視します。</p>
+        <div class="tiers">
+          <div class="tier t1"><h3>上段　法律</h3>
+            <input type="text" id="pn1" aria-label="法律名" placeholder="法令名">
+            <textarea id="pt1" aria-label="法律の条文"></textarea>
+          </div>
+          <div class="tier t2"><h3>中段　政令（施行令）</h3>
+            <input type="text" id="pn2" aria-label="政令名" placeholder="法令名">
+            <textarea id="pt2" aria-label="政令の条文"></textarea>
+          </div>
+          <div class="tier t3"><h3>下段　省令・規則（施行規則）</h3>
+            <input type="text" id="pn3" aria-label="省令名" placeholder="法令名">
+            <textarea id="pt3" aria-label="省令の条文"></textarea>
+          </div>
+        </div>
+        <div class="row">
+          <button class="b pri" id="btnBuildPaste">三段表をつくる</button>
+          <button class="b" id="btnClear">入力を空にする</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="opts">
+      <label class="f" style="flex-direction:row;align-items:center;gap:8px">法律の条の範囲
+        <input type="text" id="range" placeholder="例：1-10, 12の2（空欄で全条）">
+      </label>
+      <label><input type="checkbox" id="optDeleg"> 委任・対応のある条だけ</label>
+      <label><input type="checkbox" id="optOrphans" checked> 法律と結びつかない政令・規則の条も末尾に表示</label>
+      <label><input type="checkbox" id="optChap" checked> 章・節の見出し行</label>
+    </div>
+    <div id="msg" class="msg" hidden></div>
+  </section>
+
+  <section style="display:flex;flex-direction:column;gap:10px" aria-label="三段表">
+    <div class="tool noprint">
+      <div class="stats" id="stats"></div>
+      <div class="acts">
+        <button class="b" id="btnEdit">表を直接編集</button>
+        <button class="b pri" id="btnCopy">Word・Excel用にコピー</button>
+        <button class="b" id="btnTsv">テキスト（タブ区切り）でコピー</button>
+      </div>
+    </div>
+    <div class="legend noprint"><span><span class="hl">政令で定める</span>　委任の文言</span><span><span class="ref">法第四条第一項</span>　上位法令の引用（これを手がかりに行を合わせています）</span><span><span class="tag" style="margin:0">再掲</span>　同じ条が別の行にも出ています</span></div>
+    <div class="scroll"><table class="sdh" id="out"></table></div>
+    <details class="help noprint">
+      <summary>対応付けのしくみと注意</summary>
+      <ol>
+        <li>政令の条は、本文中の「法第〇条」を探して、その法律の条と同じ行に置きます。</li>
+        <li>省令・規則の条は、「法第〇条」または「令第〇条」を探し、法律の条か、その政令の条と同じ行に置きます。</li>
+        <li>引用がなく「前条」だけを含む条は、直前の条と同じ行に置きます。</li>
+        <li>「法」「令」という略称の定義がない法令や、他の法律を引用している条は、ずれることがあります。「表を直接編集」で直してからコピーしてください。</li>
+        <li>手元のHTMLファイルで開いた場合は、ブラウザの印刷（Ctrl+P）でA4横向きの表として印刷できます。入力欄は印刷されません。</li>
+      </ol>
+    </details>
+  </section>
+</div>
+
+<script>
+(() => {
+'use strict';
+const $ = id => document.getElementById(id);
+const API = 'https://laws.e-gov.go.jp/api/2';
+
+/* ---------- 漢数字 ---------- */
+const NUM = '[〇一二三四五六七八九十百千0-9０-９]+';
+const KD = {'〇':0,'一':1,'二':2,'三':3,'四':4,'五':5,'六':6,'七':7,'八':8,'九':9};
+const KU = {'十':10,'百':100,'千':1000};
+function toHalf(s){ return s.replace(/[０-９]/g, c => String.fromCharCode(c.charCodeAt(0) - 0xFEE0)); }
+function kan2num(s){
+  s = toHalf(s);
+  if (/^\d+$/.test(s)) return +s;
+  let total = 0, cur = 0;
+  for (const ch of s){
+    if (ch in KD) cur = cur * 10 + KD[ch];
+    else if (ch in KU){ total += (cur || 1) * KU[ch]; cur = 0; }
+  }
+  return total + cur;
+}
+function keyOf(main, subs){
+  const parts = [kan2num(main)];
+  if (subs) subs.split('の').filter(Boolean).forEach(x => parts.push(kan2num(x)));
+  return parts.join('_');
+}
+function cmpKey(a, b){
+  const x = a.split('_').map(Number), y = b.split('_').map(Number);
+  for (let i = 0; i < Math.max(x.length, y.length); i++){
+    const d = (x[i] ?? -1) - (y[i] ?? -1);
+    if (d) return d;
+  }
+  return 0;
+}
+const CIRC = '①②③④⑤⑥⑦⑧⑨⑩⑪⑫⑬⑭⑮⑯⑰⑱⑲⑳';
+
+/* ---------- e-Gov JSON → 条の配列 ---------- */
+function txt(n){
+  if (n == null) return '';
+  if (typeof n === 'string') return n;
+  if (n.tag === 'Rt') return '';
+  return (n.children || []).map(txt).join('');
+}
+function kids(n, tag){ return (n.children || []).filter(c => typeof c === 'object' && (!tag || c.tag === tag)); }
+function sentText(n){
+  if (!n) return '';
+  const cols = kids(n, 'Column');
+  if (cols.length) return cols.map(txt).join('　');
+  return txt(n);
+}
+function itemLines(node, level, out){
+  // Item / Subitem1 / Subitem2 ...
+  const tag = node.tag;
+  const title = txt(kids(node, tag + 'Title')[0]);
+  const sent = sentText(kids(node, tag + 'Sentence')[0]);
+  out.push({cls: 'i' + Math.min(level, 3), text: (title ? title + '　' : '') + sent});
+  const subTag = tag === 'Item' ? 'Subitem1' : 'Subitem' + (parseInt(tag.replace('Subitem', ''), 10) + 1);
+  kids(node).forEach(c => {
+    if (c.tag === subTag) itemLines(c, level + 1, out);
+    else if (!/(Title|Sentence)$/.test(c.tag)) { const t = txt(c).trim(); if (t) out.push({cls: 'i' + Math.min(level + 1, 3), text: t}); }
+  });
+}
+function articleFromNode(a, chapter){
+  const title = txt(kids(a, 'ArticleTitle')[0]).trim();
+  const caption = txt(kids(a, 'ArticleCaption')[0]).trim();
+  const lines = [];
+  kids(a, 'Paragraph').forEach((p, i) => {
+    const pnum = txt(kids(p, 'ParagraphNum')[0]).trim();
+    const sent = sentText(kids(p, 'ParagraphSentence')[0]);
+    const head = i === 0 ? title : pnum;
+    lines.push({cls: 'p', text: (head ? head + '　' : '') + sent, title: i === 0 ? title : ''});
+    kids(p).forEach(c => {
+      if (c.tag === 'Item') itemLines(c, 1, lines);
+      else if (!/^Paragraph(Num|Sentence|Caption)$/.test(c.tag)) { const t = txt(c).trim(); if (t) lines.push({cls: 'i1', text: t}); }
+    });
+  });
+  const num = (a.attr && a.attr.Num) || '';
+  return {key: num.replace(/:.*/, ''), title, caption, lines, chapter};
+}
+function articlesFromJson(root){
+  const out = [];
+  const HEAD = {Part: 'PartTitle', Chapter: 'ChapterTitle', Section: 'SectionTitle', Subsection: 'SubsectionTitle', Division: 'DivisionTitle'};
+  function findMain(n){
+    if (!n || typeof n !== 'object') return null;
+    if (n.tag === 'MainProvision') return n;
+    for (const c of kids(n)){ const r = findMain(c); if (r) return r; }
+    return null;
+  }
+  function walk(n, path){
+    for (const c of kids(n)){
+      if (c.tag === 'Article') out.push(articleFromNode(c, path.join('　')));
+      else if (HEAD[c.tag]) walk(c, path.concat(txt(kids(c, HEAD[c.tag])[0]).trim()));
+    }
+  }
+  const main = findMain(root);
+  if (!main) return out;
+  walk(main, []);
+  if (!out.length){
+    // 条のない法令（本則が項だけのもの）
+    const pseudo = {tag: 'Article', attr: {Num: '1'}, children: [{tag: 'ArticleTitle', children: ['本則']}].concat(kids(main, 'Paragraph'))};
+    out.push(articleFromNode(pseudo, ''));
+  }
+  return out;
+}
+
+/* ---------- 貼り付けテキスト → 条の配列 ---------- */
+const RE_ART = new RegExp('^(第(' + NUM + ')条((?:の' + NUM + ')*))(?:[\\s　]+(.*))?$');
+const RE_HEAD = new RegExp('^第' + NUM + '[編章節款目](?:の' + NUM + ')*(?:[\\s　]|$)');
+function articlesFromText(src){
+  const out = [];
+  let cur = null, cap = '', chapParts = {};
+  const order = ['編', '章', '節', '款', '目'];
+  for (const raw of src.replace(/\r/g, '').split('\n')){
+    const l = raw.trim();
+    if (!l) continue;
+    if (/^附[\s　]*則/.test(l)) break;
+    const m = l.match(RE_ART);
+    if (m){
+      cur = {key: keyOf(m[2], m[3]), title: m[1], caption: cap, lines: [], chapter: order.map(k => chapParts[k]).filter(Boolean).join('　')};
+      cur.lines.push({cls: 'p', text: m[4] ? m[1] + '　' + m[4] : m[1], title: m[1], bare: !m[4]});
+      out.push(cur); cap = '';
+      continue;
+    }
+    if (RE_HEAD.test(l)){
+      const lv = l.match(/[編章節款目]/)[0];
+      chapParts[lv] = l.replace(/[\s　]+/, '　');
+      order.slice(order.indexOf(lv) + 1).forEach(k => delete chapParts[k]);
+      cap = ''; continue;
+    }
+    if (/^[（(][^）)]*[）)]$/.test(l)){ cap = l.replace(/^\(/, '（').replace(/\)$/, '）'); continue; }
+    if (!cur) continue;
+    const first = cur.lines[0];
+    if (cur.lines.length === 1 && first.bare){ first.text = first.title + '　' + l; first.bare = false; continue; }
+    let cls = 'p';
+    if (/^[一二三四五六七八九十]+[\s　]/.test(l)) cls = 'i1';
+    else if (/^[イロハニホヘトチリヌルヲワカヨタレソツネナラム][\s　]/.test(l)) cls = 'i2';
+    else if (/^[（(][0-9０-９一二三四五六七八九十]+[）)]/.test(l)) cls = 'i3';
+    cur.lines.push({cls, text: l});
+  }
+  return out;
+}
+
+/* ---------- 引用の読み取り ---------- */
+const RE_REF = new RegExp('第(' + NUM + ')条((?:の' + NUM + ')*)(?:第(' + NUM + ')項)?', 'g');
+const RE_DELEG = /(政令|内閣府令|主務省令|[一-龥]{1,6}省令|[一-龥]{0,6}規則)で(?:定める(?:ところ)?|指定する)?/g;
+const KANJI = /[぀-ヿ一-鿿々]/;
+function stripParen(s){
+  // 末尾の（…）をひとつ外す
+  if (!/[）)]$/.test(s)) return s;
+  let depth = 0;
+  for (let i = s.length - 1; i >= 0; i--){
+    const ch = s[i];
+    if (ch === '）' || ch === ')') depth++;
+    else if (ch === '（' || ch === '(') { depth--; if (depth === 0) return s.slice(0, i); }
+  }
+  return s;
+}
+function endsAbbrev(pre, word){
+  if (!pre.endsWith(word)) return false;
+  const c = pre[pre.length - word.length - 1];
+  return c === undefined || c === '同' || !KANJI.test(c);
+}
+function refTarget(pre, ctx){
+  pre = stripParen(pre);
+  if (ctx.lawTitle && pre.endsWith(ctx.lawTitle)) return 'law';
+  if (ctx.ordTitle && pre.endsWith(ctx.ordTitle)) return 'ord';
+  if (endsAbbrev(pre, '法')) return 'law';
+  if (endsAbbrev(pre, '令') || endsAbbrev(pre, '施行令')) return 'ord';
+  return null;
+}
+function scanRefs(text, ctx){
+  const refs = [];
+  let prev = null;
+  RE_REF.lastIndex = 0;
+  let m;
+  while ((m = RE_REF.exec(text))){
+    const pre = text.slice(Math.max(0, m.index - 80), m.index);
+    let tgt = refTarget(pre, ctx);
+    if (!tgt && prev && prev.target){
+      const gap = text.slice(prev.end, m.index);
+      if (/^(?:第[^条]{0,12}[項号])*(?:及び|並びに|、|若しくは|又は|から|まで|，)+$/.test(gap)) tgt = prev.target;
+    }
+    const r = {start: m.index, end: m.index + m[0].length, target: tgt, key: keyOf(m[1], m[2]), para: m[3] ? kan2num(m[3]) : 0};
+    refs.push(r);
+    prev = r;
+  }
+  return refs;
+}
+
+/* ---------- 表示用の本文（強調つき） ---------- */
+function esc(s){ return s.replace(/[&<>"]/g, c => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;'}[c])); }
+function markup(text, ctx, isLaw){
+  const ranges = [];
+  RE_DELEG.lastIndex = 0;
+  let m;
+  while ((m = RE_DELEG.exec(text))){
+    const s = m.index, e = s + m[0].length;
+    ranges.push({s, e, cls: 'hl'});
+  }
+  if (!isLaw) scanRefs(text, ctx).forEach(r => {
+    if (!r.target) return;
+    let s = r.start;
+    const pre = text.slice(0, s);
+    if (endsAbbrev(pre, '同法') || endsAbbrev(pre, '施行令')) s -= pre.endsWith('施行令') ? 3 : 2;
+    else if (endsAbbrev(pre, '法') || endsAbbrev(pre, '令')) s -= 1;
+    ranges.push({s, e: r.end, cls: 'ref'});
+  });
+  ranges.sort((a, b) => a.s - b.s);
+  let out = '', pos = 0;
+  for (const r of ranges){
+    if (r.s < pos) continue;
+    out += esc(text.slice(pos, r.s)) + '<span class="' + r.cls + '">' + esc(text.slice(r.s, r.e)) + '</span>';
+    pos = r.e;
+  }
+  return out + esc(text.slice(pos));
+}
+function hasDeleg(a){
+  return a.lines.some(l => { RE_DELEG.lastIndex = 0; return /(政令|省令|府令|規則)で/.test(l.text); });
+}
+function artHTML(a, ctx, isLaw, again){
+  let h = '<div class="art">';
+  if (a.caption) h += '<p class="cap">' + esc(a.caption) + '</p>';
+  a.lines.forEach((l, i) => {
+    let body = markup(l.text, ctx, isLaw);
+    if (i === 0 && l.title && l.text.startsWith(l.title)) body = '<b>' + esc(l.title) + '</b>' + body.slice(esc(l.title).length);
+    if (i === 0 && again) body += '<span class="tag">再掲</span>';
+    h += '<p class="ln ' + l.cls + '">' + body + '</p>';
+  });
+  return h + '</div>';
+}
+
+/* ---------- 範囲指定 ---------- */
+function parseRange(s){
+  s = toHalf(s.trim()).replace(/[，、]/g, ',').replace(/[－ー〜~]/g, '-');
+  if (!s) return null;
+  const toKey = t => { t = t.replace(/^第/, '').replace(/条/g, ''); const [m, ...rest] = t.split('の'); return keyOf(m, rest.length ? 'の' + rest.join('の') : ''); };
+  return s.split(',').map(p => p.trim()).filter(Boolean).map(p => {
+    const [a, b] = p.split('-').map(x => x.trim());
+    return b ? {from: toKey(a), to: toKey(b)} : {from: toKey(a), to: toKey(a), exact: true};
+  });
+}
+function inRange(key, ranges){
+  if (!ranges) return true;
+  const main = key.split('_')[0];
+  return ranges.some(r => r.exact ? key === r.from : (cmpKey(key, r.from) >= 0 && (cmpKey(key, r.to) <= 0 || main === r.to.split('_')[0])));
+}
+
+/* ---------- 三段表の組み立て ---------- */
+let current = null;
+function build(data){
+  current = data;
+  const {law, ord, reg} = data;
+  const ctx = {lawTitle: law.name, ordTitle: ord.name};
+  // 政令
+  const ordToLaw = new Map();
+  (() => {
+    let prev = null;
+    ord.arts.forEach(a => {
+      const refs = scanRefs(a.lines.map(l => l.text).join('\n'), ctx);
+      const s = new Set(refs.filter(r => r.target === 'law').map(r => r.key));
+      if (!s.size && prev && /前条/.test(a.lines.map(l => l.text).join(''))) prev.forEach(k => s.add(k));
+      ordToLaw.set(a.key, s);
+      prev = s;
+    });
+  })();
+  // 規則
+  const regToLaw = new Map(), regToOrd = new Map();
+  (() => {
+    let prevL = null, prevO = null;
+    reg.arts.forEach(a => {
+      const text = a.lines.map(l => l.text).join('\n');
+      const refs = scanRefs(text, ctx);
+      const sl = new Set(refs.filter(r => r.target === 'law').map(r => r.key));
+      const so = new Set(refs.filter(r => r.target === 'ord').map(r => r.key));
+      if (!sl.size && !so.size && /前条/.test(text) && (prevL || prevO)){ prevL && prevL.forEach(k => sl.add(k)); prevO && prevO.forEach(k => so.add(k)); }
+      regToLaw.set(a.key, sl); regToOrd.set(a.key, so);
+      prevL = sl; prevO = so;
+    });
+  })();
+
+  const ranges = parseRange($('range').value);
+  const onlyDeleg = $('optDeleg').checked, showOrph = $('optOrphans').checked, showChap = $('optChap').checked;
+  const shownOrd = new Set(), shownReg = new Set();
+  const usedOrd = new Set(), usedReg = new Set();
+  const rows = [];
+  law.arts.forEach(la => {
+    const ords = ord.arts.filter(o => ordToLaw.get(o.key).has(la.key));
+    const ordKeys = new Set(ords.map(o => o.key));
+    const regs = reg.arts.filter(r => regToLaw.get(r.key).has(la.key) || [...regToOrd.get(r.key)].some(k => ordKeys.has(k)));
+    ords.forEach(o => usedOrd.add(o.key)); regs.forEach(r => usedReg.add(r.key));
+    if (!inRange(la.key, ranges)) return;
+    if (onlyDeleg && !ords.length && !regs.length && !hasDeleg(la)) return;
+    rows.push({la, ords, regs});
+  });
+  const orphanRows = [];
+  if (showOrph && !ranges){
+    const oo = ord.arts.filter(o => !usedOrd.has(o.key));
+    const leftReg = reg.arts.filter(r => !usedReg.has(r.key));
+    oo.forEach(o => {
+      const regs = leftReg.filter(r => regToOrd.get(r.key).has(o.key));
+      regs.forEach(r => usedReg.add(r.key));
+      orphanRows.push({la: null, ords: [o], regs});
+    });
+    reg.arts.filter(r => !usedReg.has(r.key)).forEach(r => orphanRows.push({la: null, ords: [], regs: [r]}));
+  }
+
+  // HTML
+  const th = (cls, t) => '<th class="' + cls + '"><span class="nm">' + esc(t.name || '（なし）') + '</span>' + (t.num ? '<span class="no">' + esc(t.num) + '</span>' : '') + '</th>';
+  let h = '<colgroup><col style="width:33.3%"><col style="width:33.3%"><col style="width:33.4%"></colgroup>';
+  h += '<thead><tr>' + th('h1', law) + th('h2', ord) + th('h3', reg) + '</tr></thead><tbody>';
+  let lastChap = null, links = 0;
+  const cell = (list, shown, isLaw) => list.length ? list.map(a => { const again = shown.has(a.key); shown.add(a.key); return artHTML(a, ctx, isLaw, again); }).join('') : '';
+  rows.forEach(r => {
+    if (showChap && r.la.chapter && r.la.chapter !== lastChap){ h += '<tr class="chap"><td colspan="3">' + esc(r.la.chapter) + '</td></tr>'; }
+    lastChap = r.la.chapter;
+    links += r.ords.length + r.regs.length;
+    h += '<tr><td>' + artHTML(r.la, ctx, true) + '</td><td>' + cell(r.ords, shownOrd) + '</td><td>' + cell(r.regs, shownReg) + '</td></tr>';
+  });
+  if (orphanRows.length){
+    h += '<tr class="sep"><td colspan="3">法律の条と結びつかなかった政令・省令の条（定義・雑則など）</td></tr>';
+    orphanRows.forEach(r => { h += '<tr><td></td><td>' + cell(r.ords, shownOrd) + '</td><td>' + cell(r.regs, shownReg) + '</td></tr>'; });
+  }
+  if (!rows.length && !orphanRows.length) h += '<tr><td colspan="3" class="empty">表示する条がありません。範囲や絞り込みを見直してください。</td></tr>';
+  h += '</tbody>';
+  const out = $('out');
+  out.innerHTML = h;
+  out.contentEditable = editing ? 'true' : 'false';
+  $('stats').innerHTML = (data.sample ? '<span class="sample">架空の条文による表示例</span>　' : '') +
+    '法律 ' + law.arts.length + '条・政令 ' + ord.arts.length + '条・省令 ' + reg.arts.length + '条　／　表示 ' + rows.length + '行、対応付け ' + links + '件';
+}
+
+/* ---------- メッセージ ---------- */
+function say(text, kind){ const m = $('msg'); m.textContent = text; m.className = 'msg ' + (kind || ''); m.hidden = !text; }
+
+/* ---------- e-Gov API ---------- */
+async function api(path){
+  const r = await fetch(API + path, {headers: {Accept: 'application/json'}});
+  if (!r.ok) throw new Error('HTTP ' + r.status);
+  return r.json();
+}
+const FAIL = '法令データを取得できませんでした。Claudeの画面上では外部通信が制限されています。HTMLファイルを保存してブラウザで開くか、「条文を貼り付け」を使ってください。';
+function lawRow(x){
+  const ri = x.current_revision_info || x.revision_info || {};
+  return {id: x.law_info.law_id, num: x.law_info.law_num, type: x.law_info.law_type, title: ri.law_title || '', repeal: ri.repeal_status};
+}
+async function searchLaws(name){
+  const j = await api('/laws?law_title=' + encodeURIComponent(name) + '&limit=200');
+  return (j.laws || []).map(lawRow).filter(l => !l.repeal || l.repeal === 'None');
+}
+const TYPES = {1: ['Act'], 2: ['CabinetOrder', 'ImperialOrder'], 3: ['MinisterialOrdinance', 'Rule']};
+function fill(tier, list, want, strict){
+  const sel = $('sel' + tier);
+  const typed = list.filter(l => TYPES[tier].includes(l.type));
+  const use = typed.length || strict ? typed : list;
+  const none = tier === 1 ? '（未選択）' : (use.length ? '（使わない）' : '（該当なし）');
+  sel.innerHTML = '<option value="">' + none + '</option>' +
+    use.map(l => '<option value="' + esc(l.id) + '">' + esc(l.title) + '（' + esc(l.num) + '）</option>').join('');
+  const pick = want.map(w => use.find(w)).find(Boolean);
+  sel.value = pick ? pick.id : '';
+  sel._list = use;
+  $('btnBuildApi').disabled = !$('sel1').value;
+  return pick;
+}
+function uniq(list){ const seen = new Set(); return list.filter(l => !seen.has(l.id) && seen.add(l.id)); }
+// 法律が決まったら、その施行令・施行規則を探して自動で選ぶ
+async function fillLower(base, extra){
+  const [o, r] = await Promise.all([searchLaws(base + '施行令'), searchLaws(base + '施行規則')]);
+  const pool = uniq([].concat(o, r, extra || []).filter(l => l.title.startsWith(base)));
+  const p2 = fill(2, pool, [l => l.title === base + '施行令', l => /施行令$/.test(l.title)], true);
+  const p3 = fill(3, pool, [l => l.title === base + '施行規則', l => /施行規則$/.test(l.title)], true);
+  return {p2, p3};
+}
+async function doSearch(){
+  const name = $('baseName').value.trim();
+  if (!name) return say('法律名を入れてください。', 'err');
+  say('検索しています…');
+  try {
+    const list = await searchLaws(name);
+    if (!list.length) return say('「' + name + '」を含む法令は見つかりませんでした。', 'err');
+    const p1 = fill(1, list, [l => l.title === name, l => l.type === 'Act' && l.title.startsWith(name), l => l.type === 'Act']);
+    if (!p1) return say('「' + name + '」を含む法律が見つかりませんでした。', 'err');
+    const {p2, p3} = await fillLower(p1.title, list);
+    const found = [p2 ? '施行令' : '', p3 ? '施行規則' : ''].filter(Boolean);
+    say('「' + p1.title + '」' + (found.length ? 'と' + found.join('・') : '') + 'を選びました。三段表をつくっています…', 'ok');
+    await buildApi();
+    if (!$('msg').classList.contains('err')) say('「' + p1.title + '」' + (found.length ? 'と' + found.join('・') : '') + 'で三段表をつくりました。' + (found.length < 2 ? '見つからなかった段は「別の名前で探す」で指定できます。' : '違う法令にしたいときは各段で選び直してください。'), 'ok');
+  } catch (e){ say(FAIL, 'err'); }
+}
+async function altSearch(tier){
+  const name = $('alt' + tier).value.trim();
+  if (!name) return;
+  say('検索しています…');
+  try {
+    const list = await searchLaws(name);
+    if (!list.length) return say('「' + name + '」を含む法令は見つかりませんでした。', 'err');
+    fill(tier, list, [l => l.title === name, () => true]);
+    say('');
+  } catch (e){ say(FAIL, 'err'); }
+}
+const cache = new Map();
+async function loadLaw(tier){
+  const sel = $('sel' + tier);
+  if (!sel.value) return {name: '', num: '', arts: []};
+  const info = sel._list.find(l => l.id === sel.value);
+  if (!cache.has(sel.value)){
+    const j = await api('/law_data/' + encodeURIComponent(sel.value) + '?law_full_text_format=json');
+    cache.set(sel.value, articlesFromJson(j.law_full_text));
+  }
+  return {name: info.title, num: info.num, id: info.id, arts: cache.get(sel.value)};
+}
+async function buildApi(){
+  say('条文を取得しています…');
+  $('btnBuildApi').disabled = true;
+  try {
+    const [law, ord, reg] = await Promise.all([loadLaw(1), loadLaw(2), loadLaw(3)]);
+    build({law, ord, reg});
+    say('三段表をつくりました。', 'ok');
+  } catch (e){ say(FAIL, 'err'); }
+  $('btnBuildApi').disabled = false;
+}
+
+/* ---------- 貼り付け ---------- */
+function buildPaste(sample){
+  const t = i => ({name: $('pn' + i).value.trim(), num: '', arts: articlesFromText($('pt' + i).value)});
+  const law = t(1), ord = t(2), reg = t(3);
+  if (!law.arts.length) return say('上段（法律）に「第一条　…」の形の条文が見つかりませんでした。', 'err');
+  say('');
+  build({law, ord, reg, sample: !!sample});
+}
+
+/* ---------- コピー ---------- */
+const INLINE = {
+  'table': 'border-collapse:collapse;width:100%;font-family:\'ＭＳ 明朝\',\'MS Mincho\',serif;font-size:10.5pt;',
+  'th': 'border:1px solid #000;background:#E7E7E7;padding:4px 6px;vertical-align:top;text-align:left;font-family:\'ＭＳ ゴシック\',sans-serif;',
+  'td': 'border:1px solid #000;padding:4px 6px;vertical-align:top;width:33%;'
+};
+const CLS = {
+  nm: 'display:block;font-weight:bold;', no: 'display:block;font-weight:normal;font-size:9pt;',
+  cap: 'margin:0 0 0 1em;', ln: 'margin:0;padding-left:1em;text-indent:-1em;',
+  i1: 'margin:0;padding-left:2em;text-indent:-1em;', i2: 'margin:0;padding-left:3em;text-indent:-1em;', i3: 'margin:0;padding-left:4em;text-indent:-1em;',
+  hl: 'background:#FFF2A8;', ref: 'text-decoration:underline;', tag: 'font-size:8pt;color:#555;border:1px solid #999;padding:0 2px;margin-left:4px;',
+  art: 'margin:0 0 8pt 0;'
+};
+function tableForCopy(){
+  const t = $('out').cloneNode(true);
+  t.removeAttribute('contenteditable'); t.removeAttribute('id');
+  t.querySelectorAll('colgroup').forEach(n => n.remove());
+  t.setAttribute('style', INLINE.table); t.setAttribute('border', '1');
+  t.querySelectorAll('th').forEach(n => n.setAttribute('style', INLINE.th));
+  t.querySelectorAll('td').forEach(n => n.setAttribute('style', INLINE.td + (n.parentNode.classList.contains('chap') || n.parentNode.classList.contains('sep') ? 'background:#F0F0F0;font-weight:bold;width:auto;' : '')));
+  t.querySelectorAll('[class]').forEach(n => {
+    const st = [...n.classList].map(c => CLS[c] || '').join('');
+    if (st) n.setAttribute('style', (n.getAttribute('style') || '') + st);
+    n.removeAttribute('class');
+  });
+  return t.outerHTML;
+}
+function tsv(){
+  const rows = [...$('out').querySelectorAll('tr')].map(tr => [...tr.children].map(c => {
+    const v = c.innerText.replace(/\n{2,}/g, '\n').trim();
+    return /[\t\n"]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v;
+  }).join('\t'));
+  return rows.join('\n');
+}
+function fallbackCopy(html){
+  const d = document.createElement('div');
+  d.style.cssText = 'position:fixed;left:-9999px;top:0;';
+  d.innerHTML = html;
+  document.body.appendChild(d);
+  const r = document.createRange(); r.selectNodeContents(d);
+  const s = getSelection(); s.removeAllRanges(); s.addRange(r);
+  let ok = false; try { ok = document.execCommand('copy'); } catch (e) {}
+  s.removeAllRanges(); d.remove();
+  return ok;
+}
+function flash(btn, text){ const o = btn.dataset.label || btn.textContent; btn.dataset.label = o; btn.textContent = text; setTimeout(() => btn.textContent = o, 1800); }
+$('btnCopy').addEventListener('click', e => {
+  const html = '<meta charset="utf-8">' + tableForCopy(), plain = tsv(), btn = e.currentTarget;
+  const done = ok => flash(btn, ok ? 'コピーしました' : 'コピーできませんでした');
+  try {
+    const item = new ClipboardItem({'text/html': new Blob([html], {type: 'text/html'}), 'text/plain': new Blob([plain], {type: 'text/plain'})});
+    navigator.clipboard.write([item]).then(() => done(true), () => done(fallbackCopy(html)));
+  } catch (err){ done(fallbackCopy(html)); }
+});
+$('btnTsv').addEventListener('click', e => {
+  const plain = tsv(), btn = e.currentTarget;
+  const pre = '<pre>' + esc(plain) + '</pre>';
+  try { navigator.clipboard.writeText(plain).then(() => flash(btn, 'コピーしました'), () => flash(btn, fallbackCopy(pre) ? 'コピーしました' : 'コピーできませんでした')); }
+  catch (err){ flash(btn, fallbackCopy(pre) ? 'コピーしました' : 'コピーできませんでした'); }
+});
+let editing = false;
+$('btnEdit').addEventListener('click', e => {
+  editing = !editing;
+  $('out').contentEditable = editing ? 'true' : 'false';
+  e.currentTarget.textContent = editing ? '編集を終える' : '表を直接編集';
+  e.currentTarget.classList.toggle('pri', editing);
+  delete e.currentTarget.dataset.label;
+});
+
+/* ---------- タブ・イベント ---------- */
+function showTab(name){
+  ['api', 'paste'].forEach(n => { $('tab-' + n).setAttribute('aria-selected', String(n === name)); $('pane-' + n).hidden = n !== name; });
+}
+$('tab-api').addEventListener('click', () => showTab('api'));
+$('tab-paste').addEventListener('click', () => showTab('paste'));
+$('btnSearch').addEventListener('click', doSearch);
+$('baseName').addEventListener('keydown', e => { if (e.key === 'Enter') doSearch(); });
+document.querySelectorAll('[data-alt]').forEach(b => b.addEventListener('click', () => altSearch(+b.dataset.alt)));
+[1, 2, 3].forEach(i => $('alt' + i).addEventListener('keydown', e => { if (e.key === 'Enter') altSearch(i); }));
+$('sel1').addEventListener('change', async () => {
+  $('btnBuildApi').disabled = !$('sel1').value;
+  const info = ($('sel1')._list || []).find(l => l.id === $('sel1').value);
+  if (!info) return;
+  say('施行令・施行規則を探しています…');
+  try { await fillLower(info.title); say(''); } catch (e){ say(FAIL, 'err'); }
+});
+$('btnBuildApi').addEventListener('click', buildApi);
+$('btnBuildPaste').addEventListener('click', () => buildPaste(false));
+$('btnClear').addEventListener('click', () => { [1, 2, 3].forEach(i => { $('pn' + i).value = ''; $('pt' + i).value = ''; }); });
+['range', 'optDeleg', 'optOrphans', 'optChap'].forEach(id => $(id).addEventListener(id === 'range' ? 'change' : 'input', () => { if (current) build(current); }));
+
+/* ---------- 表示例（架空の法令） ---------- */
+const SAMPLE = {
+  n1: 'サンプル地域資源振興法',
+  t1: `第一章　総則
+（目的）
+第一条　この法律は、地域の資源を活用した事業の振興を図り、もって地域経済の発展に寄与することを目的とする。
+（定義）
+第二条　この法律において「地域資源」とは、地域の特産物、観光資源その他の資源であって、政令で定めるものをいう。
+第二章　事業計画
+（事業計画の認定）
+第四条　地域資源を活用した事業を行おうとする者は、主務省令で定めるところにより、事業計画を作成し、主務大臣の認定を申請することができる。
+２　前項の事業計画には、次に掲げる事項を記載しなければならない。
+一　事業の目標
+二　事業の内容及び実施期間
+三　その他政令で定める事項
+（手数料）
+第五条　前条第一項の認定を申請する者は、実費を勘案して政令で定める額の手数料を納めなければならない。
+第三章　雑則
+（報告の徴収）
+第六条　主務大臣は、認定を受けた者に対し、事業の実施状況について報告を求めることができる。
+附　則
+この法律は、公布の日から施行する。`,
+  n2: 'サンプル地域資源振興法施行令',
+  t2: `（地域資源）
+第一条　サンプル地域資源振興法（以下「法」という。）第二条の政令で定める資源は、次に掲げるものとする。
+一　農林水産物及びその加工品
+二　文化財、景観その他の観光資源
+（事業計画の記載事項）
+第二条　法第四条第二項第三号の政令で定める事項は、次に掲げる事項とする。
+一　事業の実施体制
+二　資金計画
+（手数料の額）
+第三条　法第五条の政令で定める額は、一件につき一万円とする。
+２　前項の手数料の納付の方法は、主務省令で定める。
+（事務の区分）
+第四条　この政令に規定する事務は、主務大臣が行う。`,
+  n3: 'サンプル地域資源振興法施行規則',
+  t3: `（認定の申請）
+第一条　法第四条第一項の規定により認定を受けようとする者は、様式第一による申請書を主務大臣に提出しなければならない。
+第二条　前条の申請書には、次に掲げる書類を添付しなければならない。
+一　定款又はこれに代わる書類
+二　役員の名簿
+（手数料の納付方法）
+第三条　令第三条第二項の手数料は、申請書に収入印紙を貼って納めなければならない。
+（報告の様式）
+第四条　法第六条の報告は、様式第二により行うものとする。`
+};
+[1, 2, 3].forEach(i => { $('pn' + i).value = SAMPLE['n' + i]; $('pt' + i).value = SAMPLE['t' + i]; });
+buildPaste(true);
+})();
+</script>
+
+</body>
+</html>
